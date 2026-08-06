@@ -316,7 +316,12 @@ where
     }
 
     fn submit(&self) -> io::Result<()> {
-        self.park.submit()
+        self.park.submit()?;
+        // A busy runtime may keep runnable tasks queued indefinitely and use
+        // `submit()` without entering `park()`. Advance the timer wheel here as
+        // well so elapsed timers do not depend on the runtime becoming idle.
+        self.handle.process();
+        Ok(())
     }
 
     fn park(&self) -> io::Result<()> {
